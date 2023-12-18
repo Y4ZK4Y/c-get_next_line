@@ -1,239 +1,81 @@
-//#include "get_next_line.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        ::::::::            */
+/*   get_next_line.c                                    :+:    :+:            */
+/*                                                     +:+                    */
+/*   By: ykarimi <ykarimi@student.codam.nl>           +#+                     */
+/*                                                   +#+                      */
+/*   Created: 2023/12/14 13:27:37 by ykarimi       #+#    #+#                 */
+/*   Updated: 2023/12/18 14:58:19 by ykarimi       ########   odam.nl         */
+/*                                                                            */
+/* ************************************************************************** */
 
-#ifndef BUFFER_SIZE 
-#define BUFFER_SIZE 42
-#endif
+#include "get_next_line.h"
 
-
-char	*append_next_line(char	*big_buffer, char	*added_lines)
-{
-	char	*buffer;
-
-	buffer = strjoin(big_buffer, added_lines);
-	free(big_buffer);
-	return (buffer);
-
-}
-
-
-static char	*get_one_line_at_a_time(char *big_buffer, int fd)
-{
-	char	*baby_buffer;
-	int		bytes_down;
-	static int	count = 1;
-
-	bytes_down = 1;
-
-
-	baby_buffer = (char *)calloc((BUFFER_SIZE + 1), sizeof(char));
-	if (baby_buffer == NULL)
-		return (NULL);
-
-	while (bytes_down > 0)
-	{
-		bytes_down = read(fd, baby_buffer, BUFFER_SIZE);
-		if (bytes_down == -1)
-		{
-			free(baby_buffer);
-			return (NULL);
-		}
-		big_buffer = append_next_line(big_buffer, baby_buffer);
-		if (strchr(big_buffer, '\n'))
-			break;
-	}
-	free(baby_buffer);
-	return (big_buffer);
-}
-
-
-
-
-
-char	*get_next_line(int fd)
+char	*extract_lines(char *str, char **remaining_buffer)
 {
 	char	*line;
-	static char	*big_buffer;
+	char	*nl_position;
 
-	if (fd < 0 || fd > 1024 || BUFFER_SIZE <= 0)
-		return (NULL);
-
-	if (!big_buffer)
-		big_buffer = calloc(1, sizeof(char));
-
-	if (!strchr(big_buffer, '\n'))
-		big_buffer = get_one_line_at_a_time(big_buffer, fd);
-
-	if (!big_buffer)
+	nl_position = ft_strchr(str, '\n');
+	if (nl_position)
 	{
-		free(big_buffer);
-		return (NULL);
+		*nl_position = '\0';
+		*remaining_buffer = ft_strdup(nl_position + 1);
+		line = ft_strdup(str);
 	}
-
-	line = extract_line(big_buffer);
-	big_buffer = get_remaining(big_buffer);
-	
+	else
+	{
+		*remaining_buffer = NULL;
+		line = ft_strdup(str);
+	}
+	free(str);
 	return (line);
 }
 
-
-
-int main(void)
+int	read_from_fd(int fd, char **buffer)
 {
-	char *line;
-	int	fd;
-	int count;
+	int		bytes_down;
+	char	thing[BUFFER_SIZE + 1];
 
-	count = 0;
-	fd = open("file.txt", O_RDONLY);
-	if (fd == -1)
+	bytes_down = read(fd, thing, BUFFER_SIZE);
+	if (bytes_down == -1)
 	{
-		printf("ERROR opening the file");
-		return (1);
+		return (-1);
 	}
-	while (1)
-	{
-
-		line = get_next_line(fd);
-		if (line == NULL)
-			break ;
-		count++;
-		//printf(" Line[%d]: %s\n", count, line);
-		free(line);
-		line = NULL;
-	}
-		close(fd);
-		return (0);
+	thing[bytes_down] = '\0';
+	*buffer = ft_strjoin(*buffer, thing);
+	return (bytes_down);
 }
 
-
-
-
-/*
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#ifndef BUFFER_SIZE 
-#define BUFFER_SIZE 50
-#endif
-
-
-int ends_with_newline(char *str) {
-    if (str == NULL || *str == '\0') {
-        // Handle null or empty string
-        return 0;
-    }
-
-    // Find the end of the string
-    while (*str != '\0') {
-        str++;
-    }
-
-    // Check if the last character is a newline
-    if (*(str - 1) == '\n') {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-
-// void is_newl(char *buffer)
+// char	*get_next_line(int fd)
 // {
-//     while (*buffer && *buffer != '\0')
-//     {
-//         if (*buffer == '\n')
-//         {
-//             //printf("#");
-//             //return (1);
-//             *buffer = '\\';
-//         }
-//         //printf("%c", *buffer);
-//         buffer++;
-//     }
-//     //return (0);
+// 	static char	*remaining_buffer;
+// 	char		*buffer;
+// 	int			bytes;
+
+// 	//remaining_buffer = NULL;
+// 	if (fd < 0 || fd > 1024 || BUFFER_SIZE <= 0)
+// 		return (NULL);
+// 	while (1)
+// 	{
+// 		if (remaining_buffer)
+// 		{
+// 			buffer = ft_strjoin(buffer, remaining_buffer);
+// 			free(remaining_buffer);
+// 			remaining_buffer = NULL;
+// 		}
+// 		bytes = read_from_fd(fd, &buffer);
+// 		if (bytes == -1 || bytes == 0)
+// 		{
+// 			free(buffer);
+// 			if (bytes == -1)
+// 				return (NULL);
+// 			return (NULL);
+// 	}
+// 	if (ft_strchr(buffer, '\n'))
+// 		return (extract_lines(buffer, &remaining_buffer));
+// 	}
 // }
 
 
-char    *read_line(int fd, char *buffer)
-{
-    int		bytes_down;
-
-    bytes_down = 0;
-
-	bytes_down = read(fd, buffer, BUFFER_SIZE);
-    // if (is_newl(big_buffer) == 1)
-    //     printf("biq");
-    // else if (is_newl(big_buffer) == 0)
-    //     printf("booq");
-    //WRONG
-
-    if (bytes_down < 0)
-    {
-        //printf("read failed, returned -1\n");
-        return NULL;
-    }
-
-    if (bytes_down == 0)
-    {
-        //printf("read sent out 0 ;end of file\n");
-        return NULL;
-    }
-	buffer[bytes_down] = '\0';
-
-    return (buffer);
-
-}
-
-char    *get_next_line(int fd)
-{
-    char	*line;
-	static char buffer[BUFFER_SIZE + 1];
-	char	*thing;
-
-	if (fd < 0 || fd > 1024 || BUFFER_SIZE <= 0)
-    {
-        //printf("fd false or sizeofbuffer 0 or neg\n");
-		return (NULL);
-    }
-    //if (!strchr(buffer, '\n'))
-	line = read_line(fd, buffer);
-	thing = strchr(buffer, '\n');
-	if (thing != NULL)
-	{
-		//*thing = '\0';
-		printf("%s", thing);
-	}
-	
-	return (line);
-}
-
-int main(void)
-{
-	char *line;
-	int	fd;
-	
-	fd = open("file.txt", O_RDONLY);
-	if (fd == -1)
-	{
-		//printf("ERROR opening the file");
-		return (1);
-	}
-	while (1)
-	{
-		line = get_next_line(fd);
-		if (line == NULL)
-			break ;
-		printf("%s", line);
-		
-		line = NULL;
-	}
-		close(fd);
-		return (0);
-}
-*/
