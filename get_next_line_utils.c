@@ -6,7 +6,7 @@
 /*   By: yasamankarimi <yasamankarimi@student.co      +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/01/08 15:26:57 by yasamankari   #+#    #+#                 */
-/*   Updated: 2024/01/14 15:37:50 by yasamankari   ########   odam.nl         */
+/*   Updated: 2024/01/26 13:58:09 by ykarimi       ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ char	*ft_strjoin(char *s1, char *s2)
 	total_len = ft_strlen(s1) + ft_strlen(s2);
 	result = (char *)malloc(sizeof(char) * (total_len + 1));
 	if (result == NULL)
-		return (NULL);
+		return (free(s1), NULL);
 	while (s1 && s1[i] != '\0')
 	{
 		result[i] = s1[i];
@@ -66,4 +66,14 @@ char	*ft_strjoin(char *s1, char *s2)
 	result[i] = '\0';
 	free(s1);
 	return (result);
+}
+
+char	*allocate_memory(int i)
+{
+	char	*extracted_line;
+
+	extracted_line = malloc(sizeof(char) * (i + 1));
+	if (extracted_line == NULL)
+		return (NULL);
+	return (extracted_line);
 }
